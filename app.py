@@ -9,8 +9,7 @@ import json
 import os
 from threading import *
 
-#from backend import *
-#from backend import test_funk
+from backend import *
 
 class App(QMainWindow):
 
@@ -115,9 +114,10 @@ class App(QMainWindow):
     
     def start(self):
         txt = self.openDirectoyText.text()
+        st = sef.saveToText.text()
         d = self.load_settings()
         print(d)
-        self.t1=Thread(target=test_funk,args=(txt,"",d),daemon=True)
+        self.t1=Thread(target=detecting_boxes,args=(txt,st,d),daemon=True)
         self.t1.start()
         
 
