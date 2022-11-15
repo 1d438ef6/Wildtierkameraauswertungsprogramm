@@ -25,6 +25,7 @@ class App(QMainWindow):
     
     def initUI(self):
         self.setWindowTitle(self.title)
+        self.setWindowIcon(QtGui.QIcon('icon.jpg'))
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         l1 = QLabel(self)
@@ -34,6 +35,8 @@ class App(QMainWindow):
         self.openDirectoyText = QLineEdit(self)
         self.openDirectoyText.setFixedWidth(280)
         self.openDirectoyText.move(25,25)
+
+        self.openDirectoyText.setText('G:/software-test')
         
         openDirectoryBtn = QPushButton(self)
         openDirectoryBtn.setText("Ordner auswählen")
@@ -50,6 +53,8 @@ class App(QMainWindow):
         self.saveToText.setFixedWidth(280)
         self.saveToText.move(25,75)
 
+        self.saveToText.setText('G:/software-test/test2.xlsx')
+
         saveToBtn = QPushButton(self)
         saveToBtn.setText("Speicherort auswählen")
         saveToBtn.setCheckable(False)
@@ -64,6 +69,10 @@ class App(QMainWindow):
         settingsBtn.setCheckable(False)
         settingsBtn.move(25,130)
         settingsBtn.clicked.connect(self.settings.show)
+
+        #self.progress = QProgressBar(self)
+        #self.progress.setGeometry(0, 0, 300, 25)
+        #self.progress.move(150, 130)
 
         startBtn = QPushButton(self)
         startBtn.setText("START")
@@ -110,15 +119,18 @@ class App(QMainWindow):
         fileName, _ = QFileDialog.getSaveFileName(self,"speichern nach","","All Files (*);;Text Files (*.txt)", options=options)
         if fileName:
             print(fileName)
-            self.saveToText.setText(fileName)
-    
+            if fileName.endswith('.xlsx'):
+                self.saveToText.setText(fileName)
+            else: self.saveToText.setText(f"{fileName}.xlsx")
+
     def start(self):
         txt = self.openDirectoyText.text()
-        st = sef.saveToText.text()
-        d = self.load_settings()
-        print(d)
-        self.t1=Thread(target=detecting_boxes,args=(txt,st,d),daemon=True)
+        saveto = self.saveToText.text()
+        settings = self.load_settings()
+        p = [0]
+        self.t1=Thread(target=detecting_boxes,args=(txt,saveto,settings),daemon=True)
         self.t1.start()
+        
         
 
     def load_settings(self):
@@ -127,6 +139,8 @@ class App(QMainWindow):
                 my_dict = json.load(json_file)
             return my_dict
 
+    def onCountChanged(self, value):
+        self.progress.setValue(value)
     
 
     #def closeEvent(self, event):
@@ -139,7 +153,7 @@ class App(QMainWindow):
 class settings(QtWidgets.QWidget):
     def __init__(self):
         super(settings, self).__init__()
-        self.resize(400, 300)
+        self.resize(400, 400)
         self.title = 'Einstellungen'
         self.setWindowTitle(self.title)
         self.initUI()
@@ -172,27 +186,48 @@ class settings(QtWidgets.QWidget):
 
         l3 = QLabel(self)
         l3.setText("Bildverbesserungen")
-        l3.move(25,110)
+        l3.move(25,105)
         self.neg = QCheckBox(self)
         self.neg.setText('Negativ')
-        self.neg.move(25,130)
+        self.neg.move(25,120)
 
         self.gamma = QCheckBox(self)
         self.gamma.setText('Gamma Korrektion')
-        self.gamma.move(25,150)
+        self.gamma.move(25,140)
 
         self.clahe = QCheckBox(self)
         self.clahe.setText('CLAHE')
-        self.clahe.move(160,130)
+        self.clahe.move(160,120)
 
         self.hist_eq = QCheckBox(self)
         self.hist_eq.setText('Histogram Equalization')
-        self.hist_eq.move(160,150)
+        self.hist_eq.move(160,140)
+
+        l4 = QLabel(self)
+        l4.setText("Nummernschilderkennung")
+        l4.move(25, 170)
+        self.tesseract = QCheckBox(self)
+        self.tesseract.setText("Tesseract")
+        self.tesseract.move(25,185)
+        self.easyocr = QCheckBox(self)
+        self.easyocr.setText("Easy-OCR")
+        self.easyocr.move(160, 185)
+
+        self.ocr_fast = QCheckBox(self)
+        self.ocr_fast.setText("schnell")
+        self.ocr_fast.move(25,205)
+        self.ocr_slow = QCheckBox(self)
+        self.ocr_slow.setText("langsam")
+        self.ocr_slow.move(160, 205)
+
+        self.save_csv = QCheckBox(self)
+        self.save_csv.setText('csv speichern')
+        self.save_csv.move(25,250)
 
         okBtn = QPushButton(self)
         okBtn.setText('OK')
         okBtn.setFixedWidth(100)
-        okBtn.move(150,250)
+        okBtn.move(150,350)
         okBtn.setCheckable(False)
         okBtn.clicked.connect(self.save_settings)
 
@@ -216,13 +251,20 @@ class settings(QtWidgets.QWidget):
     def save_settings(self):
         my_dict = {
             'model' : self.modelText.text(),
-            'ocr' : self.ocrText.text(),
+            'tess' : self.ocrText.text(),
             'improvements' : {
                 'neg': self.neg.checkState() == 2,
                 'gamma': self.gamma.checkState() == 2,
                 'clahe': self.clahe.checkState() == 2,
                 'hist_eq': self.hist_eq.checkState() == 2
-            }
+            },
+            'ocr': {
+                'tesseract': self.tesseract.checkState() == 2,
+                'easyOCR': self.easyocr.checkState() == 2,
+                'fast': self.ocr_fast.checkState() == 2,
+                'slow': self.ocr_slow.checkState() == 2
+            },
+            'save_csv': self.save_csv.checkState() == 2
         }
         with open('settings.json', 'w', encoding ='utf8') as json_file:
             json.dump(my_dict, json_file)
@@ -233,12 +275,18 @@ class settings(QtWidgets.QWidget):
             with open('settings.json','r') as json_file:
                 my_dict = json.load(json_file)
             self.modelText.setText(my_dict['model'])
-            self.ocrText.setText(my_dict['ocr'])
+            self.ocrText.setText(my_dict['tess'])
             i = my_dict['improvements']
             if i['neg']: self.neg.setChecked(True)
             if i['gamma']: self.gamma.setChecked(True)
             if i['clahe']: self.clahe.setChecked(True)
             if i['hist_eq']: self.hist_eq.setChecked(True)
+            i = my_dict['ocr']
+            if i['tesseract']: self.tesseract.setChecked(True)
+            if i['easyOCR']: self.easyocr.setChecked(True)
+            if i['fast']: self.ocr_fast.setChecked(True)
+            if i['slow']: self.ocr_slow.setChecked(True)
+            if my_dict['save_csv']: self.save_csv.setChecked(True)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

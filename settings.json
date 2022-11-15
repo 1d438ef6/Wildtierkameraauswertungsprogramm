@@ -1,0 +1,1 @@
+{"model": "G:/train_results_yolov5m_252/weights/best.pt", "tess": "", "improvements": {"neg": false, "gamma": false, "clahe": false, "hist_eq": false}, "ocr": {"tesseract": false, "easyOCR": true, "fast": true, "slow": false}, "save_csv": false}
