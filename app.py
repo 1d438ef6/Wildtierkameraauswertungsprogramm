@@ -36,7 +36,7 @@ class App(QMainWindow):
         self.openDirectoyText.setFixedWidth(280)
         self.openDirectoyText.move(25,25)
 
-        #self.openDirectoyText.setText('G:/software-test')
+        self.openDirectoyText.setText('G:/software-test')
         
         openDirectoryBtn = QPushButton(self)
         openDirectoryBtn.setText("Ordner auswählen")
@@ -53,7 +53,7 @@ class App(QMainWindow):
         self.saveToText.setFixedWidth(280)
         self.saveToText.move(25,75)
 
-        #self.saveToText.setText('G:/software-test/test2.xlsx')
+        self.saveToText.setText('G:/software-test/test2.xlsx')
 
         saveToBtn = QPushButton(self)
         saveToBtn.setText("Speicherort auswählen")
@@ -128,7 +128,7 @@ class App(QMainWindow):
         saveto = self.saveToText.text()
         settings = self.load_settings()
         p = [0]
-        self.t1=Thread(target=detecting_boxes,args=(txt,saveto,settings),daemon=True)
+        self.t1=Thread(target=start_recursive_detection,args=(txt,saveto,settings),daemon=True)
         self.t1.start()
         
         
