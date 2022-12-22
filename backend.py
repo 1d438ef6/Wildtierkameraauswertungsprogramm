@@ -147,7 +147,7 @@ def detecting_boxes(directory,saveTo,settings:dict={}):
             for j in range(len(df_temp)):
                 det_obj.append((df_temp['Klasse'].iloc[j],"{:.2f}".format(float(df_temp['Wahrscheinlichkeit'].iloc[j])*100)))
                 lp.append(df_temp['LP'].iloc[j])
-            h.append([ifd, nr, [k for k in lp if not k == ''], str(det_obj).replace('\'','').strip('[]'), Datum, Zeit, f"=HYPERLINK(\"{Bild}\",\"{Bild}\")"])
+            h.append([ifd, nr, [k for k in lp if not k == ''], str(det_obj).replace('\'','').strip('[]'), f"=DATEVALUE(\"{Datum}\")", f"=TIMEVALUE(\"{Zeit}\")", f"=HYPERLINK(\"{Bild}\",\"{Bild}\")"])
             ifd += 1
         if cam == 'Einfahrt':
             Einfahrt = pd.DataFrame(h,columns=['ifd-Nr','Nr','Nummernschilder','Detektierte Objekte','Datum','Zeit','Pfad'])
