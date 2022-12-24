@@ -61,7 +61,7 @@ def start_recursive_detection(directory,saveTo,settings:dict={}):
     global vertexter
     vertexter = Vertexter(settings['tess'],settings['ocr'])
     global a
-    a = ['Einfahrt','Ausfahrt']
+    a = ['Einfahrt','Ausfahrt','unbekannt']         # die möglichen Positionen der Kameras
 
     global counter
     counter = 0
@@ -91,12 +91,16 @@ def start_recursive_detection(directory,saveTo,settings:dict={}):
             ifd += 1
         if cam == 'Einfahrt':
             Einfahrt = pd.DataFrame(h,columns=['ifd-Nr','Nr','Nummernschilder','Detektierte Objekte','Datum','Zeit','Pfad'])
-        else:     
+        elif cam == 'Ausfahrt':     
             Ausfahrt = pd.DataFrame(h,columns=['ifd-Nr','Nr','Nummernschilder','Detektierte Objekte','Datum','Zeit','Pfad'])
-        
+        else:
+            sonstiges = pd.DataFrame(h,columns=['ifd-Nr','Nr','Nummernschilder','Detektierte Objekte','Datum','Zeit','Pfad'])
+
+
     with pd.ExcelWriter(saveTo) as writer:
         Einfahrt.to_excel(writer, sheet_name="Einfahrt",index=False)
         Ausfahrt.to_excel(writer, sheet_name="Ausfahrt",index=False)
+        if not sonstiges.empty: sonstiges.to_excel(writer, sheet_name="unbekannt",index=False)
 
     print('################################################################')
     print('Needed Time: ',time.time()-t1)
@@ -116,7 +120,7 @@ def recursive_detection(path:str, settings:dict, kamera:str=None):
                 for i in recursive_detection(f"{path}\\{f}\\", settings, f): h.append(i)
             else: 
                 for i in recursive_detection(f"{path}\\{f}\\", settings, kamera): h.append(i)
-        else:
+        elif f.lower().endswith(('.jpg','.png','.jpeg','.bmp')):        # lediglich auf Bildern soll die Erkennung durchgeführt werden
             counter += 1
             print(counter)
             image = cv2.imread(f"{path}\\{f}",0)
@@ -133,7 +137,7 @@ def recursive_detection(path:str, settings:dict, kamera:str=None):
                 c_2 = 0
                 for b in pred.xyxy[0]:          # pred.xyxy ist ein Tensor mit den Detektionen, aufgebaut sind diese [X1, Y1, X2, Y2, Wahrscheinlichkeit, Klasse]
                     h.append([ 
-                        a[0] if a[0].lower() in kamera.lower() else a[1],               # welcher Kamera das Bild aufgenommen hat
+                        a[0] if a[0].lower() in kamera.lower() else a[1] if a[1].lower() in kamera.lower() else 'unbekannt',               # welche Kamera das Bild aufgenommen hat
                         f"{path}/{f}",                                                  # Pfad zum Bild
                         counter,                                                        # Nummer des Bildes
                         vertexter.get_text_from_image_2(orig_img[0:25,425:500])[0][1],  # Nummer des Bildes in der vierer-Reihe
@@ -148,7 +152,7 @@ def recursive_detection(path:str, settings:dict, kamera:str=None):
                     c_2 = c_2 + 1
             else:       # kein Objekt ist erkannt wurden
                 h.append([
-                    a[0] if a[0].lower() in kamera.lower() else a[1],
+                    a[0] if a[0].lower() in kamera.lower() else a[1] if a[1].lower() in kamera.lower() else 'unbekannt',
                     f"{path}/{f}",
                     counter,
                     vertexter.get_text_from_image_2(orig_img[0:25,425:500])[0][1],
@@ -159,6 +163,7 @@ def recursive_detection(path:str, settings:dict, kamera:str=None):
                     [0,0,0,0],
                     '',
                     0])
+        else: continue          # ist die Datei weder Ordner noch Bild soll sie übersprungen werden
     return h
             
 
@@ -199,6 +204,9 @@ class Vertexter:
     
     # Funktion zum erkennen des Textes spezifisch auf Nummernschildern
     # wendet diverse Verarbeitungen an um die Genauigkeit zu erhöhen
+    #  -> hochskalieren
+    #  -> Drehungen im 2D Raum werden eliminiert
+    #TODO: weiter die Genauigkeit verbessern durch optimalere Verbesserungen
     def get_text_from_lp(self, image)->str:
         orig_img = image
         # anwenden diverser Bildverarbeitungen entsprechend der gewählten Einstellungen
