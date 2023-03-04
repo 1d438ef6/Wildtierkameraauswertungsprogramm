@@ -168,9 +168,14 @@ def recursive_detection(path:str, settings:dict, kamera:str=None):
             
 
 # übersetzt gegebenen timestring in Array mit [Datum, Uhrzeit]
+# betreibt außerdem Fehlerkorrektur in den übergebenen Zeitwerten
 def get_date_time(timestring)->list():
     try:
-        return [timestring[0][1], timestring[1][1].replace('*', ':')]
+        # time = ''.join([i for i in timestring[0][1].replace('o','0').replace('O','0') if i.isdigit()])
+        # while len(time) < 8: time = time + '0'
+        time = timestring[0][1].replace('*', '.').replace(':','.').replace('o','0').replace('O','0').replace('-','')
+        return [time[:4] + '-' + time[4:6] + '-' + time[6:], 
+                timestring[1][1].replace('*', ':').replace('.',':').replace('o','0').replace('O','0')]
     except:
         return [f"00-00-0000", f"00:00:0000"]
 

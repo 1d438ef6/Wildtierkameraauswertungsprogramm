@@ -36,7 +36,7 @@ class App(QMainWindow):
         self.openDirectoyText.setFixedWidth(280)
         self.openDirectoyText.move(25,25)
 
-        self.openDirectoyText.setText('G:/software-test')
+        #self.openDirectoyText.setText('G:/software-test')
         
         openDirectoryBtn = QPushButton(self)
         openDirectoryBtn.setText("Ordner auswählen")
@@ -53,7 +53,7 @@ class App(QMainWindow):
         self.saveToText.setFixedWidth(280)
         self.saveToText.move(25,75)
 
-        self.saveToText.setText('G:/software-test/test2.xlsx')
+        #self.saveToText.setText('G:/software-test/test2.xlsx')
 
         saveToBtn = QPushButton(self)
         saveToBtn.setText("Speicherort auswählen")
